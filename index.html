@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PromptSafe: show your clients and insurer that staff can't paste client data into AI</title>
+  <meta name="description" content="A browser extension for small firms that catches client data in AI prompts before it is sent, and produces a report you can show your insurer. Runs locally.">
+  <style>
+    :root { --bg:#fff; --fg:#0f172a; --muted:#475569; --line:#e2e8f0; --brand:#2563eb; --soft:#f1f5f9; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0b1220; --fg:#e5e7eb; --muted:#94a3b8; --line:#1e293b; --brand:#60a5fa; --soft:#111a2e; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main, header, footer { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+    header { display:flex; justify-content:space-between; align-items:center; padding-top:20px; padding-bottom:20px; }
+    .logo { font-weight:700; }
+    h1 { font-size: clamp(28px, 6vw, 40px); line-height:1.15; margin: 24px 0 12px; }
+    h2 { font-size: 22px; margin: 48px 0 12px; }
+    p.lead { font-size: 19px; color: var(--muted); }
+    ul.points { padding-left: 20px; } ul.points li { margin: 8px 0; }
+    .cta, button { display:inline-block; background:var(--brand); color:#fff; border:0; border-radius:8px; padding:12px 20px; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; }
+    .card { background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:20px; }
+    .report { font-family: ui-monospace, Consolas, monospace; font-size: 14px; white-space: pre-wrap; }
+    form { display:grid; gap:12px; }
+    label { display:grid; gap:4px; font-size:15px; }
+    input, select { padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; }
+    .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .small { font-size:14px; color:var(--muted); }
+    footer { padding-top:32px; padding-bottom:48px; border-top:1px solid var(--line); margin-top:56px; }
+    a { color: var(--brand); }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">PromptSafe</span>
+    <a href="#waitlist" class="cta">Join the waitlist</a>
+  </header>
+
+  <main>
+    <h1>Show your clients and your insurer that staff can't paste client data into AI unnoticed.</h1>
+    <p class="lead">PromptSafe is a browser extension for small law, accounting, and clinic teams. It catches client identifiers, financial data, and secrets in ChatGPT, Claude, and Gemini before they are sent, and keeps a record you can show as proof.</p>
+    <p><a href="#waitlist" class="cta">Get early access</a></p>
+
+    <ul class="points">
+      <li><strong>Catches it before it's sent.</strong> Pasted or typed card numbers, SSNs, bank details, API keys, and more get flagged. Staff redact in one click.</li>
+      <li><strong>Runs on the device.</strong> Prompt text never leaves the browser. The log stores rule names and counts, never content.</li>
+      <li><strong>Gives you the proof.</strong> A one-page report of AI-safety checks, ready to attach to an insurance renewal or a client security questionnaire.</li>
+    </ul>
+
+    <h2>What the report looks like</h2>
+    <div class="card report">AI Data Protection Summary &mdash; Example Firm LLP
+Period: 1 Sep &ndash; 30 Sep    Protected seats: 12 of 12
+
+Sensitive items caught before sending ........ 47
+  Payment card numbers ........................ 9
+  Social Security numbers ..................... 14
+  Email addresses ............................. 18
+  Access keys / secrets ....................... 6
+Redacted before sending ....................... 41
+Sent anyway (user override) ................... 6
+Sites covered: ChatGPT, Claude, Gemini
+
+Prompt content is never collected or stored.</div>
+    <p class="small">Illustrative example. The Team report is in development.</p>
+
+    <h2>Pricing</h2>
+    <div class="grid">
+      <div class="card"><strong>Free</strong><br>For individuals. Redaction and a local log on your own device.</div>
+      <div class="card"><strong>Team &mdash; early access</strong><br>From about $49/month per firm. Shared policy, aggregated audit report, managed install for all staff. Waitlist members get a founding-firm discount.</div>
+    </div>
+
+    <h2 id="waitlist">Join the waitlist</h2>
+    <div class="card">
+      <!-- Replace the action URL with your form endpoint (Formspree, Tally, Basin, etc.) -->
+      <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <label>Work email <input type="email" name="email" required autocomplete="email"></label>
+        <label>Firm size
+          <select name="firm_size" required>
+            <option value="">Select</option>
+            <option>1&ndash;4</option><option>5&ndash;15</option><option>16&ndash;50</option><option>51+</option>
+          </select>
+        </label>
+        <label>Practice area
+          <select name="practice_area" required>
+            <option value="">Select</option>
+            <option>Law firm</option><option>Accounting / tax</option><option>Clinic / health</option><option>HR / recruiting</option><option>Other</option>
+          </select>
+        </label>
+        <button type="submit">Request early access</button>
+        <span class="small">We'll only email you about PromptSafe. See the <a href="privacy.html">privacy policy</a>.</span>
+      </form>
+    </div>
+
+    <h2>Straight answers</h2>
+    <p><strong>Does it guarantee compliance?</strong> No. PromptSafe reduces accidental leaks and documents your controls. It does not guarantee protection or legal compliance, and it is not legal advice.</p>
+    <p><strong>Can it see my prompts?</strong> The extension reads text in the prompt box on supported AI sites, on your device only, to find sensitive patterns. It sends nothing to us in the Free version, and the Team version uploads counts only.</p>
+    <p><strong>What does it miss?</strong> It uses pattern and checksum rules, so names and free-form facts in a prompt are not caught yet. Treat it as a safety net, not a substitute for a policy.</p>
+  </main>
+
+  <footer class="small">&copy; PromptSafe &middot; <a href="privacy.html">Privacy policy</a></footer>
+</body>
+</html>
