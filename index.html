@@ -5,107 +5,327 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PromptSafe: show your clients and insurer that staff can't paste client data into AI</title>
   <meta name="description" content="A browser extension for small firms that catches client data in AI prompts before it is sent, and produces a report you can show your insurer. Runs locally.">
+  <meta name="theme-color" content="#050912">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%232563eb'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 5l22 8v17c0 14-9 24-22 29C19 54 10 44 10 30V13z' fill='url(%23g)'/%3E%3Crect x='20' y='22' width='24' height='5' rx='2' fill='%23fff' opacity='.85'/%3E%3Crect x='20' y='32' width='17' height='5' rx='2' fill='%23061326'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/theme.css">
   <style>
-    :root { --bg:#fff; --fg:#0f172a; --muted:#475569; --line:#e2e8f0; --brand:#2563eb; --soft:#f1f5f9; }
-    @media (prefers-color-scheme: dark) {
-      :root { --bg:#0b1220; --fg:#e5e7eb; --muted:#94a3b8; --line:#1e293b; --brand:#60a5fa; --soft:#111a2e; }
+    .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding: 70px 0 40px; }
+    h1 { font-size: clamp(32px, 5.2vw, 54px); line-height: 1.08; letter-spacing: -.02em; margin: 14px 0 18px; }
+    h1 em { font-style: normal; background: linear-gradient(135deg, var(--cyan), #93c5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { font-size: 19px; color: var(--muted); max-width: 540px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+
+    /* Live demo window */
+    .demo { padding: 0; overflow: hidden; position: relative; }
+    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font: 12px var(--mono); color: var(--muted); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.18); }
+    .demo-body { padding: 22px 20px; min-height: 124px; font: 15px/1.7 var(--mono); position: relative; }
+    .caret { display: inline-block; width: 8px; height: 1em; vertical-align: -2px; margin-left: 1px; background: var(--cyan); animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .flag { color: var(--rose); background: rgba(251,113,133,.14); border-radius: 4px; padding: 1px 3px; box-shadow: 0 0 14px rgba(251,113,133,.35); }
+    .chip { color: var(--cyan); background: rgba(34,211,238,.12); border: 1px solid rgba(34,211,238,.4); border-radius: 6px; padding: 0 6px; animation: pop .35s ease; }
+    @keyframes pop { from { transform: scale(.8); opacity: 0; } }
+    .scan { position: absolute; left: 0; right: 0; top: 0; height: 56px; pointer-events: none; opacity: 0;
+      background: linear-gradient(180deg, transparent, rgba(34,211,238,.22), transparent); border-bottom: 1px solid rgba(34,211,238,.6); }
+    .scanning .scan { animation: sweep 1.3s ease-in-out forwards; }
+    @keyframes sweep { 0% { opacity: 1; transform: translateY(-56px); } 100% { opacity: 0; transform: translateY(140px); } }
+    .demo-log { border-top: 1px solid var(--line); padding: 14px 20px; font: 13px/1.8 var(--mono); color: var(--muted); min-height: 98px; }
+    .demo-log .ok { color: var(--cyan); }
+    .demo-log div { animation: fadein .4s ease; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(4px); } }
+
+    .trust { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+    .trust li { padding: 8px 14px; border-radius: 999px; font: 13px var(--mono); color: var(--muted); }
+    .trust li::before { content: "\25CF"; color: var(--cyan); margin-right: 8px; font-size: 9px; vertical-align: 2px; }
+
+    section { margin-top: 96px; }
+    h2 { font-size: clamp(26px, 3.6vw, 36px); letter-spacing: -.015em; margin: 10px 0 14px; line-height: 1.15; }
+    .grid3 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 28px; }
+    .card { padding: 26px; }
+    .card h3 { margin: 14px 0 8px; font-size: 19px; }
+    .card p { margin: 0; color: var(--muted); font-size: 16px; }
+    .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(34,211,238,.2), rgba(59,130,246,.2)); border: 1px solid rgba(34,211,238,.3); }
+    .ico svg { width: 22px; height: 22px; stroke: var(--cyan); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .report { padding: 0; overflow: hidden; }
+    .report pre { margin: 0; padding: 24px; overflow-x: auto; font: 14px/1.8 var(--mono); color: #c7d4e8; }
+    .report .k { color: var(--muted); } .report .v { color: var(--cyan); } .report .w { color: var(--rose); }
+    .split { display: grid; gap: 40px; grid-template-columns: 1fr 1.1fr; align-items: center; }
+
+    .pricing { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 28px; }
+    .price { padding: 28px; position: relative; }
+    .price.hot { border-color: rgba(34,211,238,.5); box-shadow: 0 0 60px rgba(34,211,238,.12), 0 1px 0 rgba(255,255,255,.08) inset; }
+    .tag { position: absolute; top: 18px; right: 18px; font: 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); border: 1px solid rgba(34,211,238,.4); padding: 3px 9px; border-radius: 999px; }
+    .amount { font-size: 34px; font-weight: 700; letter-spacing: -.02em; margin: 6px 0 12px; }
+    .amount small { font-size: 15px; font-weight: 400; color: var(--muted); }
+    .price ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 16px; }
+    .price li { margin: 6px 0; }
+
+    form { display: grid; gap: 14px; }
+    .form-card { padding: 30px; max-width: 560px; }
+    label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+    input, select { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.28); color: var(--fg); font: inherit; }
+    input:focus, select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,.18); }
+    #msg { min-height: 1.4em; font-size: 15px; }
+
+    details { padding: 18px 22px; margin-top: 12px; }
+    summary { cursor: pointer; font-weight: 600; }
+    details p { margin: 10px 0 0; color: var(--muted); font-size: 16px; }
+
+    @media (max-width: 860px) {
+      .hero, .split { grid-template-columns: 1fr; gap: 32px; }
+      .hero { padding-top: 44px; }
+      .by { display: none; }
     }
-    * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    main, header, footer { max-width: 760px; margin: 0 auto; padding: 0 16px; }
-    header { display:flex; justify-content:space-between; align-items:center; padding-top:20px; padding-bottom:20px; }
-    .logo { font-weight:700; }
-    h1 { font-size: clamp(28px, 6vw, 40px); line-height:1.15; margin: 24px 0 12px; }
-    h2 { font-size: 22px; margin: 48px 0 12px; }
-    p.lead { font-size: 19px; color: var(--muted); }
-    ul.points { padding-left: 20px; } ul.points li { margin: 8px 0; }
-    .cta, button { display:inline-block; background:var(--brand); color:#fff; border:0; border-radius:8px; padding:12px 20px; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; }
-    .card { background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:20px; }
-    .report { font-family: ui-monospace, Consolas, monospace; font-size: 14px; white-space: pre-wrap; }
-    form { display:grid; gap:12px; }
-    label { display:grid; gap:4px; font-size:15px; }
-    input, select { padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; }
-    .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-    .small { font-size:14px; color:var(--muted); }
-    .by { display:flex; align-items:center; gap:10px; margin-top:14px; }
-    .by img { height:32px; width:auto; }
-    .by a { color:var(--fg); font-weight:600; text-decoration:none; }
-    footer { padding-top:32px; padding-bottom:48px; border-top:1px solid var(--line); margin-top:56px; }
-    a { color: var(--brand); }
   </style>
 </head>
 <body>
-  <header>
-    <span class="logo">PromptSafe <span class="small" style="font-weight:400">by <a href="https://umbrellaweb.net/" rel="noopener">Umbrella Web</a></span></span>
-    <a href="#waitlist" class="cta">Join the waitlist</a>
-  </header>
+  <div class="backdrop" aria-hidden="true"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
 
-  <main>
-    <h1>Show your clients and your insurer that staff can't paste client data into AI unnoticed.</h1>
-    <p class="lead">PromptSafe is a browser extension for small law, accounting, and clinic teams. It catches client identifiers, financial data, and secrets in ChatGPT, Claude, and Gemini before they are sent, and keeps a record you can show as proof.</p>
-    <p><a href="#waitlist" class="cta">Get early access</a></p>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="glass">
+        <a class="brand" href="#top">
+          <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><path d="M32 5l22 8v17c0 14-9 24-22 29C19 54 10 44 10 30V13z" fill="url(#lg)"/><rect x="20" y="22" width="24" height="5" rx="2" fill="#fff" opacity=".85"/><rect x="20" y="32" width="17" height="5" rx="2" fill="#061326"/></svg>
+          PromptSafe <span class="by">by Umbrella Web</span>
+        </a>
+        <a href="#waitlist" class="btn small">Join the waitlist</a>
+      </div>
+    </nav>
 
-    <ul class="points">
-      <li><strong>Catches it before it's sent.</strong> Pasted or typed card numbers, SSNs, bank details, API keys, and more get flagged. Staff redact in one click.</li>
-      <li><strong>Runs on the device.</strong> Prompt text never leaves the browser. The log stores rule names and counts, never content.</li>
-      <li><strong>Gives you the proof.</strong> A one-page report of AI-safety checks, ready to attach to an insurance renewal or a client security questionnaire.</li>
+    <header class="hero" id="top">
+      <div>
+        <span class="eyebrow">AI data-leak protection for small firms</span>
+        <h1>Show your clients and your insurer that staff <em>can't paste client data into AI</em> unnoticed.</h1>
+        <p class="lead">PromptSafe catches client identifiers, financial data, and secrets in ChatGPT, Claude, and Gemini before they are sent, then keeps a record you can show as proof. Everything runs on the device.</p>
+        <div class="cta-row">
+          <a href="#waitlist" class="btn">Get early access</a>
+          <a href="#how" class="btn ghost">See how it works</a>
+        </div>
+      </div>
+
+      <div class="glass demo" id="demo" aria-label="Animated example of PromptSafe redacting a prompt">
+        <div class="demo-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px">chat prompt &middot; protected</span></div>
+        <div class="demo-body"><span class="scan"></span><span id="typed"></span><span class="caret" id="caret"></span></div>
+        <div class="demo-log" id="log"><div>&gt; monitoring paste and send&hellip;</div></div>
+      </div>
+    </header>
+
+    <ul class="trust reveal">
+      <li class="glass">Runs locally</li>
+      <li class="glass">No prompt content collected</li>
+      <li class="glass">Minimal permissions</li>
+      <li class="glass">Clear about its limits</li>
     </ul>
 
-    <h2>What the report looks like</h2>
-    <div class="card report">AI Data Protection Summary &mdash; Example Firm LLP
-Period: 1 Sep &ndash; 30 Sep    Protected seats: 12 of 12
+    <section id="how" class="reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>Catch it. Redact it. Prove it.</h2>
+      <div class="grid3">
+        <div class="glass card">
+          <div class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div>
+          <h3>Catch it before it's sent</h3>
+          <p>Pasted or typed card numbers, SSNs, bank details, access keys, and more are flagged on the spot, with checksum checks to keep false alarms low.</p>
+        </div>
+        <div class="glass card">
+          <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M4 5h10M4 19h7"/></svg></div>
+          <h3>Redact in one click</h3>
+          <p>Staff replace sensitive values with safe placeholders like <code>[SSN_1]</code> and keep working. Strict mode removes the "send anyway" option.</p>
+        </div>
+        <div class="glass card">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+          <h3>Prove you're in control</h3>
+          <p>An audit log of rule names and counts, never content, plus a one-page report for insurance renewals and client security questionnaires.</p>
+        </div>
+      </div>
+    </section>
 
-Sensitive items caught before sending ........ 47
-  Payment card numbers ........................ 9
-  Social Security numbers ..................... 14
-  Email addresses ............................. 18
-  Access keys / secrets ....................... 6
-Redacted before sending ....................... 41
-Sent anyway (user override) ................... 6
-Sites covered: ChatGPT, Claude, Gemini
+    <section class="split reveal">
+      <div>
+        <span class="eyebrow">The evidence</span>
+        <h2>A report you can hand to an insurer.</h2>
+        <p class="muted">Counts only. Prompt text never leaves the device and is never stored. The Team report is in development; this is an illustrative example.</p>
+      </div>
+      <div class="glass report">
+        <pre><span class="k">AI Data Protection Summary</span>  Example Firm LLP
+<span class="k">Period</span> 1&ndash;30 Sep   <span class="k">Protected seats</span> <span class="v">12 / 12</span>
 
-Prompt content is never collected or stored.</div>
-    <p class="small">Illustrative example. The Team report is in development.</p>
+<span class="k">Sensitive items caught before sending</span>  <span class="v">47</span>
+  <span class="k">Payment cards .........</span> 9
+  <span class="k">Social Security nos ...</span> 14
+  <span class="k">Email addresses .......</span> 18
+  <span class="k">Access keys / secrets .</span> 6
+<span class="k">Redacted before sending</span> ........ <span class="v">41</span>
+<span class="k">Sent anyway (override)</span> ......... <span class="w">6</span>
+<span class="k">Sites</span> ChatGPT &middot; Claude &middot; Gemini
 
-    <h2>Pricing</h2>
-    <div class="grid">
-      <div class="card"><strong>Free</strong><br>For individuals. Redaction and a local log on your own device.</div>
-      <div class="card"><strong>Team &mdash; early access</strong><br>From about $49/month per firm. Shared policy, aggregated audit report, managed install for all staff. Waitlist members get a founding-firm discount.</div>
-    </div>
+<span class="k">Prompt content: never collected</span></pre>
+      </div>
+    </section>
 
-    <h2 id="waitlist">Join the waitlist</h2>
-    <div class="card">
-      <form action="https://formspree.io/f/myeknqer" method="POST">
-        <label>Work email <input type="email" name="email" required autocomplete="email"></label>
-        <label>Firm size
-          <select name="firm_size" required>
-            <option value="">Select</option>
-            <option>1&ndash;4</option><option>5&ndash;15</option><option>16&ndash;50</option><option>51+</option>
-          </select>
-        </label>
-        <label>Practice area
-          <select name="practice_area" required>
-            <option value="">Select</option>
-            <option>Law firm</option><option>Accounting / tax</option><option>Clinic / health</option><option>HR / recruiting</option><option>Other</option>
-          </select>
-        </label>
-        <button type="submit">Request early access</button>
-        <span class="small">We'll only email you about PromptSafe. See the <a href="privacy.html">privacy policy</a>.</span>
-      </form>
-    </div>
+    <section id="pricing" class="reveal">
+      <span class="eyebrow">Pricing</span>
+      <h2>Start free. Add your team when you're ready.</h2>
+      <div class="pricing">
+        <div class="glass price">
+          <h3 style="margin:0">Free</h3>
+          <div class="amount">$0</div>
+          <ul>
+            <li>Redaction on ChatGPT, Claude, Gemini</li>
+            <li>Local audit log, CSV export</li>
+            <li>For individuals</li>
+          </ul>
+        </div>
+        <div class="glass price hot">
+          <span class="tag">Early access</span>
+          <h3 style="margin:0">Team</h3>
+          <div class="amount">from $49 <small>/ month per firm</small></div>
+          <ul>
+            <li>Shared policy for every seat</li>
+            <li>Aggregated audit report (PDF/CSV)</li>
+            <li>Managed install for all staff</li>
+            <li>Founding-firm discount for waitlist members</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-    <h2>Straight answers</h2>
-    <p><strong>Does it guarantee compliance?</strong> No. PromptSafe reduces accidental leaks and documents your controls. It does not guarantee protection or legal compliance, and it is not legal advice.</p>
-    <p><strong>Can it see my prompts?</strong> The extension reads text in the prompt box on supported AI sites, on your device only, to find sensitive patterns. It sends nothing to us in the Free version, and the Team version uploads counts only.</p>
-    <p><strong>What does it miss?</strong> It uses pattern and checksum rules, so names and free-form facts in a prompt are not caught yet. Treat it as a safety net, not a substitute for a policy.</p>
-  </main>
+    <section id="waitlist" class="reveal">
+      <span class="eyebrow">Early access</span>
+      <h2>Join the waitlist.</h2>
+      <div class="glass form-card">
+        <form id="wl" action="https://formspree.io/f/myeknqer" method="POST">
+          <label>Work email <input type="email" name="email" required autocomplete="email" placeholder="you@firm.com"></label>
+          <label>Firm size
+            <select name="firm_size" required>
+              <option value="">Select</option>
+              <option>1&ndash;4</option><option>5&ndash;15</option><option>16&ndash;50</option><option>51+</option>
+            </select>
+          </label>
+          <label>Practice area
+            <select name="practice_area" required>
+              <option value="">Select</option>
+              <option>Law firm</option><option>Accounting / tax</option><option>Clinic / health</option><option>HR / recruiting</option><option>Other</option>
+            </select>
+          </label>
+          <button class="btn" type="submit" id="submit">Request early access</button>
+          <div id="msg" role="status" aria-live="polite"></div>
+          <span class="muted" style="font-size:13px">We'll only email you about PromptSafe. See the <a href="privacy.html">privacy policy</a>.</span>
+        </form>
+      </div>
+    </section>
 
-  <footer class="small">
-    <div>&copy; PromptSafe &middot; <a href="privacy.html">Privacy policy</a> &middot; <a href="mailto:support@umbrellaweb.net">support@umbrellaweb.net</a></div>
-    <div class="by">
-      <a href="https://umbrellaweb.net/" rel="noopener"><img src="assets/umbrellaweb-logo.png" alt="Umbrella Web logo"></a>
-      <span>PromptSafe is built and operated by <a href="https://umbrellaweb.net/" rel="noopener">Umbrella Web</a>.</span>
-    </div>
-  </footer>
+    <section class="reveal">
+      <span class="eyebrow">Straight answers</span>
+      <h2>What it is, and what it isn't.</h2>
+      <details class="glass"><summary>Does it guarantee compliance?</summary><p>No. PromptSafe reduces accidental leaks and documents your controls. It does not guarantee protection or legal compliance, and it is not legal advice.</p></details>
+      <details class="glass"><summary>Can it see my prompts?</summary><p>The extension reads text in the prompt box on supported AI sites, on your device only, to find sensitive patterns. The Free version sends nothing to us, and the Team version uploads counts only.</p></details>
+      <details class="glass"><summary>What does it miss?</summary><p>It uses pattern and checksum rules, so names and free-form facts in a prompt are not caught yet, and files are not scanned. Treat it as a safety net, not a substitute for a policy.</p></details>
+    </section>
+
+    <footer>
+      <div>&copy; PromptSafe &middot; <a href="privacy.html">Privacy policy</a> &middot; <a href="mailto:support@umbrellaweb.net">support@umbrellaweb.net</a></div>
+      <div class="maker">
+        <a href="https://umbrellaweb.net/" rel="noopener"><img src="assets/umbrellaweb-logo.png" alt="Umbrella Web logo"></a>
+        <span>PromptSafe is built and operated by <a href="https://umbrellaweb.net/" rel="noopener">Umbrella Web</a>.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      // Scroll reveal
+      var items = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { threshold: 0.12 });
+        items.forEach(function (el) { io.observe(el); });
+      } else {
+        items.forEach(function (el) { el.classList.add('in'); });
+      }
+
+      // Hero demo: type a prompt, scan it, redact it, loop.
+      var SEG = [
+        { t: 'Draft a reply to the client. Their SSN is ' },
+        { s: '123-45-6789', chip: '[SSN_1]', label: 'US Social Security number' },
+        { t: ' and card ' },
+        { s: '4242 4242 4242 4242', chip: '[CARD_1]', label: 'Payment card number' },
+        { t: '.' }
+      ];
+      var demo = document.getElementById('demo'), typed = document.getElementById('typed'),
+          caret = document.getElementById('caret'), log = document.getElementById('log');
+      var total = SEG.reduce(function (n, g) { return n + (g.t || g.s).length; }, 0);
+      var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+      // mode: 'plain' | 'flag' | 'chip'
+      function render(chars, mode) {
+        typed.textContent = '';
+        var left = chars;
+        for (var i = 0; i < SEG.length && left > 0; i++) {
+          var g = SEG[i], text = g.t || g.s, part = text.slice(0, left);
+          left -= part.length;
+          if (g.t) { typed.appendChild(document.createTextNode(part)); continue; }
+          var span = document.createElement('span');
+          if (mode === 'chip') { span.className = 'chip'; span.textContent = g.chip; }
+          else { if (mode === 'flag') span.className = 'flag'; span.textContent = part; }
+          typed.appendChild(span);
+        }
+      }
+      function line(text, cls) {
+        var d = document.createElement('div');
+        if (cls) d.className = cls;
+        d.textContent = text;
+        log.appendChild(d);
+      }
+      function finalState() {
+        render(total, 'chip');
+        caret.style.display = 'none';
+        log.textContent = '';
+        SEG.forEach(function (g) { if (g.s) line('✓ ' + g.label + ' redacted', 'ok'); });
+        line('> 0 bytes of prompt text left your device');
+      }
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finalState(); return; }
+
+      (async function loop() {
+        for (;;) {
+          log.textContent = ''; line('> monitoring paste and send…');
+          caret.style.display = ''; demo.classList.remove('scanning');
+          for (var n = 0; n <= total; n++) { render(n, 'plain'); await sleep(38); }
+          await sleep(500);
+          line('> Enter pressed. scanning…');
+          demo.classList.add('scanning');
+          await sleep(650); render(total, 'flag');
+          SEG.forEach(function (g) { if (g.s) line('! ' + g.label + ' found'); });
+          await sleep(1300);
+          render(total, 'chip'); caret.style.display = 'none';
+          line('✓ 2 items redacted. nothing left your device', 'ok');
+          await sleep(3600);
+        }
+      })();
+    })();
+
+    // Waitlist: submit in place; show an error if it fails.
+    (function () {
+      var form = document.getElementById('wl'), msg = document.getElementById('msg'), btn = document.getElementById('submit');
+      if (!window.fetch) return;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        btn.disabled = true; msg.style.color = ''; msg.textContent = 'Sending…';
+        fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } })
+          .then(function (r) {
+            if (!r.ok) throw new Error('bad status');
+            form.reset(); msg.style.color = '#22d3ee';
+            msg.textContent = 'You’re on the list. We’ll be in touch.';
+          })
+          .catch(function () {
+            msg.style.color = '#fb7185';
+            msg.textContent = 'Something went wrong. Please try again or email support@umbrellaweb.net.';
+          })
+          .then(function () { btn.disabled = false; });
+      });
+    })();
+  </script>
 </body>
 </html>
