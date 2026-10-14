@@ -27,13 +27,16 @@
     input, select { padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; }
     .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
     .small { font-size:14px; color:var(--muted); }
+    .by { display:flex; align-items:center; gap:10px; margin-top:14px; }
+    .by img { height:32px; width:auto; }
+    .by a { color:var(--fg); font-weight:600; text-decoration:none; }
     footer { padding-top:32px; padding-bottom:48px; border-top:1px solid var(--line); margin-top:56px; }
     a { color: var(--brand); }
   </style>
 </head>
 <body>
   <header>
-    <span class="logo">PromptSafe</span>
+    <span class="logo">PromptSafe <span class="small" style="font-weight:400">by <a href="https://umbrellaweb.net/" rel="noopener">Umbrella Web</a></span></span>
     <a href="#waitlist" class="cta">Join the waitlist</a>
   </header>
 
@@ -97,6 +100,12 @@ Prompt content is never collected or stored.</div>
     <p><strong>What does it miss?</strong> It uses pattern and checksum rules, so names and free-form facts in a prompt are not caught yet. Treat it as a safety net, not a substitute for a policy.</p>
   </main>
 
-  <footer class="small">&copy; PromptSafe &middot; <a href="privacy.html">Privacy policy</a></footer>
+  <footer class="small">
+    <div>&copy; PromptSafe &middot; <a href="privacy.html">Privacy policy</a> &middot; <a href="mailto:support@umbrellaweb.net">support@umbrellaweb.net</a></div>
+    <div class="by">
+      <a href="https://umbrellaweb.net/" rel="noopener"><img src="assets/umbrellaweb-logo.png" alt="Umbrella Web logo"></a>
+      <span>PromptSafe is built and operated by <a href="https://umbrellaweb.net/" rel="noopener">Umbrella Web</a>.</span>
+    </div>
+  </footer>
 </body>
 </html>
