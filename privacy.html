@@ -28,7 +28,7 @@
     <main class="glass doc">
       <span class="eyebrow">Privacy</span>
       <h1>Privacy policy</h1>
-      <p class="muted">Last updated: 14 October 2026</p>
+      <p class="muted">Last updated: 16 October 2026</p>
 
       <h2>What the extension does</h2>
       <p>PromptSafe checks text you paste or type into the prompt box on ChatGPT, Claude, Gemini, and Dola for sensitive patterns (such as card numbers, government IDs, and access keys) before you send it, and lets you redact them.</p>
@@ -40,6 +40,7 @@
       <h2>What we store</h2>
       <p>On your device, in browser storage: your settings, and an audit log. Each log entry contains the time, the site, whether the text was pasted or sent, the action you took, and the names and counts of rules triggered (for example "ssn &times; 1"). It also notes when a file attachment was noticed, without recording the file or its name. It never contains prompt text or detected values.</p>
       <p>The extension also keeps a local AI tool inventory: for each supported AI site it has run on, the first and last date seen, the days it was active, and how many prompts were checked. It never records prompt text, and it records nothing for sites where PromptSafe does not run. You can export or clear the audit log and the inventory from the options page at any time.</p>
+      <p>You can also mark a flagged value as "Not sensitive". PromptSafe then remembers that exact value only as a salted hash on your device, never as text, and stops flagging it. You can clear these from the options page. If you add client or company names to the protected names list, the list is stored only on your device, matched locally, and never uploaded. You can also switch individual detection rules on or off.</p>
 
       <h2>Team version (when available)</h2>
       <p>If your organization enables Team features, the extension will also upload the same aggregated entries (time, user, site, rule names, counts, action) and the inventory counts to your organization's dashboard. Prompt content is still never uploaded.</p>
